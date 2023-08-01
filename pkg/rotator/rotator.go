@@ -35,8 +35,8 @@ import (
 )
 
 const (
-	certName                    = "tls.crt"
-	keyName                     = "tls.key"
+	defaultCertName             = "tls.crt"
+	defaultKeyName              = "tls.key"
 	caCertName                  = "ca.crt"
 	caKeyName                   = "ca.key"
 	rotationCheckFrequency      = 12 * time.Hour
@@ -122,6 +122,14 @@ func AddRotator(mgr manager.Manager, cr *CertRotator) error {
 		}
 	}
 
+	if cr.certName == "" {
+		cr.certName = defaultCertName
+	}
+
+	if cr.keyName == "" {
+		cr.keyName = defaultKeyName
+	}
+
 	reconciler := &ReconcileWH{
 		cache:                       cache,
 		writer:                      mgr.GetClient(), // TODO
@@ -191,6 +199,10 @@ type CertRotator struct {
 	certsNotMounted chan struct{}
 	wasCAInjected   *atomic.Bool
 	caNotInjected   chan struct{}
+
+	// could override cert and key file names
+	certName string
+	keyName  string
 
 	// testNoBackgroundRotation doesn't actually start the rotator in the background.
 	// This should only be used for testing.
@@ -279,7 +291,7 @@ func (cr *CertRotator) refreshCertIfNeeded() (bool, error) {
 			return true, nil
 		}
 		// make sure our reconciler is initialized on startup (either this or the above refreshCerts() will call this)
-		if !cr.validServerCert(secret.Data[caCertName], secret.Data[certName], secret.Data[keyName]) {
+		if !cr.validServerCert(secret.Data[caCertName], secret.Data[cr.certName], secret.Data[cr.keyName]) {
 			crLog.Info("refreshing server certs")
 			if err := cr.refreshCerts(false, secret); err != nil {
 				crLog.Error(err, "could not refresh server certs")
@@ -420,7 +432,7 @@ func injectCertToExternalDataProvider(externalDataProvider *unstructured.Unstruc
 }
 
 func (cr *CertRotator) writeSecret(cert, key []byte, caArtifacts *KeyPairArtifacts, secret *corev1.Secret) error {
-	populateSecret(cert, key, caArtifacts, secret)
+	populateSecret(cert, key, cr.certName, cr.keyName, caArtifacts, secret)
 	return cr.writer.Update(context.Background(), secret)
 }
 
@@ -432,7 +444,7 @@ type KeyPairArtifacts struct {
 	KeyPEM  []byte
 }
 
-func populateSecret(cert, key []byte, caArtifacts *KeyPairArtifacts, secret *corev1.Secret) {
+func populateSecret(cert, key []byte, certName string, keyName string, caArtifacts *KeyPairArtifacts, secret *corev1.Secret) {
 	if secret.Data == nil {
 		secret.Data = make(map[string][]byte)
 	}
@@ -792,7 +804,7 @@ func (r *ReconcileWH) ensureCerts(certPem []byte) error {
 // ensureCertsMounted ensure the cert files exist.
 func (cr *CertRotator) ensureCertsMounted() {
 	checkFn := func() (bool, error) {
-		certFile := cr.CertDir + "/" + certName
+		certFile := cr.CertDir + "/" + cr.certName
 		_, err := os.Stat(certFile)
 		if err == nil {
 			return true, nil
