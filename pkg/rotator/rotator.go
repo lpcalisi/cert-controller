@@ -205,6 +205,10 @@ type CertRotator struct {
 	wasCAInjected   *atomic.Bool
 	caNotInjected   chan struct{}
 
+	// could override cert and key file names
+	certName string
+	keyName  string
+
 	// testNoBackgroundRotation doesn't actually start the rotator in the background.
 	// This should only be used for testing.
 	testNoBackgroundRotation bool
