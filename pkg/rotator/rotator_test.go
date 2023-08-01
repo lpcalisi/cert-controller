@@ -160,7 +160,7 @@ func TestSecretRoundTrip(t *testing.T) {
 	}
 
 	secret := &corev1.Secret{}
-	populateSecret(cert, key, caArtifacts, secret)
+	populateSecret(cert, key, cr.certName, cr.keyName, caArtifacts, secret)
 	art2, err := buildArtifactsFromSecret(secret)
 	if err != nil {
 		t.Fatal(err)
