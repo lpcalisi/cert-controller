@@ -43,7 +43,7 @@ const (
 	defaultCaCertValidityDuration     = 10 * 365 * 24 * time.Hour
 	defaultServerCertValidityDuration = 1 * 365 * 24 * time.Hour
 	defaultLookaheadInterval          = 90 * 24 * time.Hour
-        rotateCA                    	  = true
+	rotateCA                          = true
 )
 
 var crLog = logf.Log.WithName("cert-rotation")
@@ -255,7 +255,7 @@ func (cr *CertRotator) Start(ctx context.Context) error {
 	}
 
 	if cr.CaCertDuration == time.Duration(0) {
-		cr.CaCertDuration = defaultCertValidityDuration
+		cr.CaCertDuration = defaultCaCertValidityDuration
 	}
 
 	if cr.RotateCA == nil {
