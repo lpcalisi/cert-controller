@@ -227,6 +227,9 @@ type CertRotator struct {
 	// RotateCA sets if CA should be rotated
 	RotateCA *bool
 
+	// RotateCA sets if CA should be rotated
+	RotateCA *bool
+
 	certsMounted    chan struct{}
 	certsNotMounted chan struct{}
 	wasCAInjected   *atomic.Bool
@@ -256,6 +259,11 @@ func (cr *CertRotator) Start(ctx context.Context) error {
 
 	if cr.CaCertDuration == time.Duration(0) {
 		cr.CaCertDuration = defaultCertValidityDuration
+	}
+
+	if cr.RotateCA == nil {
+		var rotateCA bool = rotateCA
+		cr.RotateCA = &rotateCA
 	}
 
 	if cr.RotateCA == nil {
